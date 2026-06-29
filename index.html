@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ハロプロ タイピング</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ホーム画面 -->
+  <section id="screen-home" class="screen is-active">
+    <header class="home-header">
+      <h1 class="logo">ハロプロ<span>タイピング</span></h1>
+      <p class="subtitle">グループを選んでスタート</p>
+    </header>
+    <div class="group-grid" id="group-grid"></div>
+  </section>
+
+  <!-- ゲーム開始画面 -->
+  <section id="screen-ready" class="screen">
+    <div class="ready-banner" id="ready-banner">
+      <h2 id="ready-group-name"></h2>
+    </div>
+    <div class="conveyor">
+      <div class="conveyor-track" id="conveyor-track"></div>
+    </div>
+    <div class="ready-actions">
+      <button id="btn-start" class="btn btn-start">ENTER または クリックでスタート</button>
+      <button id="btn-ready-home" class="btn btn-secondary">ホームへ</button>
+    </div>
+  </section>
+
+  <!-- ゲーム画面 -->
+  <section id="screen-game" class="screen">
+    <div class="game-hud">
+      <div class="hud-item"><span class="hud-label">残り</span><span class="hud-value" id="hud-remaining">0</span></div>
+      <div class="hud-item"><span class="hud-label">タイム</span><span class="hud-value" id="hud-timer">0.0</span></div>
+      <div class="hud-item"><span class="hud-label">ミス</span><span class="hud-value" id="hud-miss">0</span></div>
+      <div class="hud-item"><span class="hud-label">コンボ</span><span class="hud-value" id="hud-combo">0</span></div>
+    </div>
+    <div class="game-stage">
+      <div class="photo-frame" id="photo-frame">
+        <img id="game-photo" class="member-photo" src="" alt="">
+      </div>
+      <div class="time-bar-track">
+        <div class="time-bar-fill" id="time-bar-fill"></div>
+      </div>
+      <div class="type-target" id="type-target">
+        <div class="member-kanji" id="game-kanji"></div>
+        <div class="member-romaji" id="game-romaji"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 結果画面 -->
+  <section id="screen-result" class="screen">
+    <h2 class="result-title">RESULT</h2>
+    <div class="result-rank" id="result-rank"></div>
+    <table class="result-stats" id="result-stats"></table>
+    <div class="result-actions">
+      <button id="btn-retry" class="btn btn-start">もう一度</button>
+      <button id="btn-result-home" class="btn btn-secondary">ホームへ</button>
+    </div>
+  </section>
+
+  <div class="countdown-overlay hidden" id="countdown-overlay">
+    <div class="countdown-number" id="countdown-number"></div>
+  </div>
+
+</div>
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
