@@ -10,7 +10,7 @@ const GROUPS = [
     members: [
       { name: "野中美希", romaji: "nonakamiki", image: "images/morning_nonaka.webp" },
       { name: "小田さくら", romaji: "odasakura", image: "images/morning_oda.webp" },
-      { name: "牧野真莉愛", romaji: "makinomaria", image: "images/morning_makino.webp" },
+      // { name: "牧野真莉愛", romaji: "makinomaria", image: "images/morning_makino.webp" },卒業おめでとうございます
       { name: "岡村ほまれ", romaji: "okamurahomare", image: "images/morning_okamura.webp" },
       { name: "山﨑愛生", romaji: "yamazakimei", image: "images/morning_yamazaki.webp" },
       { name: "櫻井梨央", romaji: "sakurairio", image: "images/morning_sakurai.webp" },
@@ -45,7 +45,7 @@ const GROUPS = [
     color: "#FF9900",
     image: "images/group_juice.webp",
     members: [
-      { name: "段原瑠々", romaji: "dannbararuru", image: "images/juice_dambara.webp" },
+      { name: "段原瑠々", romaji: "danbararuru", image: "images/juice_dambara.webp" },
       { name: "井上玲音", romaji: "inouerei", image: "images/juice_inoue.webp" },
       { name: "工藤由愛", romaji: "kudouyume", image: "images/juice_kudou.webp" },
       { name: "松永里愛", romaji: "matunagariai", image: "images/juice_matsunaga.webp" },
@@ -53,7 +53,7 @@ const GROUPS = [
       { name: "入江里咲", romaji: "irierisa", image: "images/juice_irie.webp" },
       { name: "江端妃咲", romaji: "ebatakisaki", image: "images/juice_ebata.webp" },
       { name: "石山咲良", romaji: "isiyamasakura", image: "images/juice_ishiyama.webp" },
-      { name: "遠藤彩加里", romaji: "enndouakari", image: "images/juice_endo.webp" },
+      { name: "遠藤彩加里", romaji: "endouakari", image: "images/juice_endo.webp" },
       { name: "川嶋美楓", romaji: "kawasimamihu", image: "images/juice_kawashima.webp" },
       { name: "林仁愛", romaji: "hayasiniina", image: "images/juice_hayashi.webp" },
     ],
@@ -85,7 +85,7 @@ const GROUPS = [
     members: [
       { name: "西田汐里", romaji: "nisidasiori", image: "images/beyo_nishida.webp" },
       { name: "江口紗耶", romaji: "egutisaya", image: "images/beyo_eguchi.webp" },
-      { name: "高瀬くるみ", romaji: "takasekurumi", image: "images/beyo_takase.webp" },
+      // { name: "高瀬くるみ", romaji: "takasekurumi", image: "images/beyo_takase.webp" },卒業おめでとうございます
       { name: "前田こころ", romaji: "maedakokoro", image: "images/beyo_maeda.webp" },
       { name: "岡村美波", romaji: "okamuraminami", image: "images/beyo_okamura.webp" },
       { name: "清野桃々姫", romaji: "kiyonomomohime", image: "images/beyo_kiyono.webp" },

@@ -1,13 +1,52 @@
 const TIME_LIMIT_MS = 5000; // 1人あたりの残り時間
 
-const ALL_GROUP = {
-  id: "all",
-  name: "全グループ",
-  color: "#0075C2",
-  members: GROUPS.flatMap((g) => g.members),
-};
+// 寿司打と同様、複数のローマ字表記を受け付けるための同義グループ
+const SYMMETRIC_ROMAJI_GROUPS = [
+  ["shi", "si"],
+  ["sha", "sya"],
+  ["chi", "ti"],
+  ["tsu", "tu"],
+  ["ji", "zi"],
+  ["fu", "hu"],
+];
 
-const GROUPS_WITH_ALL = [...GROUPS, ALL_GROUP];
+function isVowelOrY(ch) {
+  return !!ch && "aiueoy".includes(ch);
+}
+
+function buildRomajiTokens(romaji) {
+  const tokens = [];
+  let i = 0;
+  while (i < romaji.length) {
+    let matched = null;
+
+    // ん(撥音): 後ろが母音/yでない場合は n / nn のどちらでも可とする
+    if (romaji[i] === "n" && !isVowelOrY(romaji[i + 1])) {
+      const canonicalLen = romaji[i + 1] === "n" ? 2 : 1;
+      const isTrailing = i + canonicalLen === romaji.length;
+      matched = isTrailing
+        ? { canonicalLen, alternates: ["nn"] }
+        : { canonicalLen, alternates: ["nn", "n"] };
+    } else {
+      for (const group of SYMMETRIC_ROMAJI_GROUPS) {
+        for (const form of group) {
+          if (romaji.startsWith(form, i) && (!matched || form.length > matched.canonicalLen)) {
+            matched = { canonicalLen: form.length, alternates: group };
+          }
+        }
+      }
+    }
+
+    if (matched) {
+      tokens.push({ display: romaji.slice(i, i + matched.canonicalLen), alternates: matched.alternates });
+      i += matched.canonicalLen;
+    } else {
+      tokens.push({ display: romaji[i], alternates: [romaji[i]] });
+      i += 1;
+    }
+  }
+  return tokens;
+}
 
 const screens = {
   home: document.getElementById("screen-home"),
@@ -22,6 +61,8 @@ const el = {
   conveyorTrack: document.getElementById("conveyor-track"),
   btnStart: document.getElementById("btn-start"),
   btnReadyHome: document.getElementById("btn-ready-home"),
+  btnGameHome: document.getElementById("btn-game-home"),
+  btnGameRetry: document.getElementById("btn-game-retry"),
   countdownOverlay: document.getElementById("countdown-overlay"),
   countdownNumber: document.getElementById("countdown-number"),
   hudTimer: document.getElementById("hud-timer"),
@@ -66,39 +107,37 @@ function showScreen(name) {
 }
 
 function getGroup(groupId) {
-  return GROUPS_WITH_ALL.find((g) => g.id === groupId);
+  return GROUPS.find((g) => g.id === groupId);
+}
+
+function shadeColor(hex, percent) {
+  const num = parseInt(hex.slice(1), 16);
+  const amount = Math.round(255 * percent);
+  let r = (num >> 16) + amount;
+  let g = ((num >> 8) & 0x00ff) + amount;
+  let b = (num & 0x0000ff) + amount;
+  r = Math.min(255, Math.max(0, r));
+  g = Math.min(255, Math.max(0, g));
+  b = Math.min(255, Math.max(0, b));
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
 // ---------- ホーム画面 ----------
 function renderHomeGrid() {
   el.groupGrid.innerHTML = "";
-  GROUPS_WITH_ALL.forEach((group) => {
+  GROUPS.forEach((group) => {
     const card = document.createElement("div");
     card.className = "group-card";
 
-    if (group.id === "all") {
-      card.classList.add("all-card");
-      GROUPS.slice(0, 4).forEach((g) => {
-        const img = document.createElement("img");
-        img.src = g.image;
-        img.className = "thumb";
-        card.appendChild(img);
-      });
-      const label = document.createElement("div");
-      label.className = "label";
-      label.textContent = group.name;
-      card.appendChild(label);
-    } else {
-      const img = document.createElement("img");
-      img.src = group.image;
-      img.className = "thumb";
-      card.appendChild(img);
-      const label = document.createElement("div");
-      label.className = "label";
-      label.style.backgroundColor = group.color;
-      label.textContent = group.name;
-      card.appendChild(label);
-    }
+    const img = document.createElement("img");
+    img.src = group.image;
+    img.className = "thumb";
+    card.appendChild(img);
+    const label = document.createElement("div");
+    label.className = "label";
+    label.style.backgroundColor = group.color;
+    label.textContent = group.name;
+    card.appendChild(label);
 
     card.addEventListener("click", () => selectGroup(group.id));
     el.groupGrid.appendChild(card);
@@ -109,6 +148,10 @@ function renderHomeGrid() {
 function selectGroup(groupId) {
   state.group = groupId;
   const group = getGroup(groupId);
+
+  document.documentElement.style.setProperty("--accent", group.color);
+  document.documentElement.style.setProperty("--accent-light", shadeColor(group.color, 0.25));
+  document.documentElement.style.setProperty("--accent-dark", shadeColor(group.color, -0.3));
 
   el.readyGroupName.textContent = group.name;
   el.readyGroupName.style.backgroundColor = group.color;
@@ -143,10 +186,14 @@ function startCountdown() {
       setTimeout(step, 700);
     } else {
       setTimeout(() => {
-        el.countdownOverlay.classList.add("hidden");
         state.counting = false;
         startGame();
-      }, 500);
+        el.countdownOverlay.classList.add("fade-out");
+        setTimeout(() => {
+          el.countdownOverlay.classList.add("hidden");
+          el.countdownOverlay.classList.remove("fade-out");
+        }, 350);
+      }, 700);
     }
   }
   step();
@@ -194,27 +241,40 @@ function advanceQueue() {
   }
 }
 
-function renderTypeTarget(member) {
+function renderTokenSpan(token, isCurrent) {
+  const tokSpan = document.createElement("span");
+  tokSpan.className = "tok";
+  token.display.split("").forEach((ch, ci) => {
+    const chSpan = document.createElement("span");
+    chSpan.className = "tokch" + (isCurrent && ci === 0 ? " current" : "");
+    chSpan.textContent = ch;
+    tokSpan.appendChild(chSpan);
+  });
+  return tokSpan;
+}
+
+function renderTypeTarget(member, tokens) {
   el.gameKanji.textContent = member.name;
   el.gameRomaji.innerHTML = "";
-  member.romaji.split("").forEach((ch, i) => {
-    const span = document.createElement("span");
-    span.className = "ch" + (i === 0 ? " current" : "");
-    span.textContent = ch;
-    el.gameRomaji.appendChild(span);
+  tokens.forEach((token, i) => {
+    el.gameRomaji.appendChild(renderTokenSpan(token, i === 0));
   });
 }
 
 function spawnCard() {
   const member = state.queue[state.queueIndex];
+  const tokens = buildRomajiTokens(member.romaji);
 
-  renderTypeTarget(member);
+  renderTypeTarget(member, tokens);
   el.gamePhoto.src = member.image;
   el.gamePhoto.alt = member.name;
 
   state.current = {
     member,
-    typedPos: 0,
+    tokens,
+    tokenIndex: 0,
+    tokenTyped: "",
+    pendingExtraN: false,
     resolved: false,
   };
 
@@ -229,12 +289,49 @@ function spawnCard() {
 }
 
 function updateRomajiHighlight() {
-  const spans = el.gameRomaji.querySelectorAll(".ch");
-  spans.forEach((span, i) => {
-    span.classList.remove("typed", "current");
-    if (i < state.current.typedPos) span.classList.add("typed");
-    else if (i === state.current.typedPos) span.classList.add("current");
+  const cur = state.current;
+  const tokSpans = el.gameRomaji.querySelectorAll(".tok");
+  tokSpans.forEach((tokSpan, i) => {
+    const chSpans = tokSpan.querySelectorAll(".tokch");
+    chSpans.forEach((chSpan, ci) => {
+      chSpan.classList.remove("typed", "current");
+      if (i < cur.tokenIndex) {
+        chSpan.classList.add("typed");
+      } else if (i === cur.tokenIndex) {
+        if (ci < cur.tokenTyped.length) chSpan.classList.add("typed");
+        else if (ci === cur.tokenTyped.length) chSpan.classList.add("current");
+      }
+    });
   });
+}
+
+// 入力した文字に合わせて、表示中のローマ字を該当する表記(si->shi など)に切り替える
+function updateCurrentTokenDisplay() {
+  const cur = state.current;
+  const token = cur.tokens[cur.tokenIndex];
+  const tokSpan = el.gameRomaji.querySelectorAll(".tok")[cur.tokenIndex];
+  if (!token || !tokSpan) return;
+  const viable = token.alternates.filter((alt) => alt.startsWith(cur.tokenTyped));
+  const displayText = viable.length === 1 ? viable[0] : token.display;
+  if (tokSpan.textContent !== displayText) {
+    tokSpan.innerHTML = "";
+    displayText.split("").forEach((ch) => {
+      const chSpan = document.createElement("span");
+      chSpan.className = "tokch";
+      chSpan.textContent = ch;
+      tokSpan.appendChild(chSpan);
+    });
+  }
+}
+
+// nn のように、確定済みのトークンに余分な文字が打たれた分を表示に追加する
+function appendExtraTypedChar(tokenIdx, ch) {
+  const tokSpan = el.gameRomaji.querySelectorAll(".tok")[tokenIdx];
+  if (!tokSpan) return;
+  const chSpan = document.createElement("span");
+  chSpan.className = "tokch typed";
+  chSpan.textContent = ch;
+  tokSpan.appendChild(chSpan);
 }
 
 function flashMiss() {
@@ -301,16 +398,39 @@ function onKeyDown(e) {
   e.preventDefault();
 
   const cur = state.current;
-  const expected = cur.member.romaji[cur.typedPos];
+  const key = e.key.toLowerCase();
 
-  if (e.key.toLowerCase() === expected) {
-    cur.typedPos++;
+  // 直前に短い方の「n」で確定した直後、余分な n をもう1つ打っても不正解にしない(nn入力対策)
+  if (cur.pendingExtraN) {
+    cur.pendingExtraN = false;
+    if (key === "n") {
+      state.correctKeystrokes++;
+      state.combo++;
+      state.maxCombo = Math.max(state.maxCombo, state.combo);
+      appendExtraTypedChar(cur.tokenIndex - 1, "n");
+      return;
+    }
+  }
+
+  const token = cur.tokens[cur.tokenIndex];
+  const attempt = cur.tokenTyped + key;
+  const stillPossible = token.alternates.some((alt) => alt.startsWith(attempt));
+
+  if (stillPossible) {
+    cur.tokenTyped = attempt;
     state.correctKeystrokes++;
     state.combo++;
     state.maxCombo = Math.max(state.maxCombo, state.combo);
+    updateCurrentTokenDisplay();
+
+    if (token.alternates.includes(attempt)) {
+      cur.pendingExtraN = attempt === "n" && token.alternates.includes("nn");
+      cur.tokenIndex++;
+      cur.tokenTyped = "";
+    }
     updateRomajiHighlight();
 
-    if (cur.typedPos >= cur.member.romaji.length) {
+    if (cur.tokenIndex >= cur.tokens.length) {
       completeCurrentCard();
     }
   } else {
@@ -358,10 +478,28 @@ function goHome() {
   showScreen("home");
 }
 
+function stopRound() {
+  state.roundActive = false;
+  clearInterval(state.timerHandle);
+  state.current = null;
+}
+
+function exitGameToHome() {
+  stopRound();
+  goHome();
+}
+
+function exitGameToReady() {
+  stopRound();
+  selectGroup(state.group);
+}
+
 // ---------- イベント登録 ----------
 el.btnStart.addEventListener("click", startCountdown);
 el.btnReadyHome.addEventListener("click", goHome);
-el.btnRetry.addEventListener("click", startCountdown);
+el.btnGameHome.addEventListener("click", exitGameToHome);
+el.btnGameRetry.addEventListener("click", exitGameToReady);
+el.btnRetry.addEventListener("click", exitGameToReady);
 el.btnResultHome.addEventListener("click", goHome);
 document.addEventListener("keydown", onKeyDown);
 el.timeBarFill.addEventListener("transitionend", (e) => {
