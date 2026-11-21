@@ -4,9 +4,20 @@ const TIME_LIMIT_MS = 5000; // 1人あたりの残り時間
 const SYMMETRIC_ROMAJI_GROUPS = [
   ["shi", "si"],
   ["sha", "sya"],
+  ["shu", "syu"],
+  ["she", "sye"],
+  ["sho", "syo"],
   ["chi", "ti"],
+  ["cha", "tya", "cya"],
+  ["chu", "tyu", "cyu"],
+  ["che", "tye", "cye"],
+  ["cho", "tyo", "cyo"],
   ["tsu", "tu"],
   ["ji", "zi"],
+  ["ja", "zya", "jya"],
+  ["ju", "zyu", "jyu"],
+  ["je", "zye", "jye"],
+  ["jo", "zyo", "jyo"],
   ["fu", "hu"],
 ];
 
@@ -122,6 +133,65 @@ function shadeColor(hex, percent) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+// グループ写真の周りに単色の余白がある場合 (公式サイトの画像によってはある)、
+// 余白を切り取り、空いた部分は写真の背景色 (端の色の中央値) で埋める
+function trimImagePadding(img) {
+  if (img.dataset.trimmed) return;
+  img.dataset.trimmed = "1";
+
+  const w = img.naturalWidth, h = img.naturalHeight;
+  if (!w || !h) return;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0);
+  let data;
+  try { data = ctx.getImageData(0, 0, w, h).data; } catch { return; } // file:// で開いた場合などは読めないのでそのまま
+
+  const px = (x, y) => { const i = (y * w + x) * 4; return [data[i], data[i + 1], data[i + 2]]; };
+  const near = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) <= 24;
+  const flatCol = (x, ref) => { for (let y = 0; y < h; y += 4) { if (!near(px(x, y), ref)) return false; } return true; };
+  const flatRow = (y, ref) => { for (let x = 0; x < w; x += 4) { if (!near(px(x, y), ref)) return false; } return true; };
+
+  let left = 0, right = w, top = 0, bottom = h;
+  while (left < w / 3 && flatCol(left, px(0, 0))) left++;
+  while (right > w * 2 / 3 && flatCol(right - 1, px(w - 1, 0))) right--;
+  while (top < h / 3 && flatRow(top, px(0, 0))) top++;
+  while (bottom > h * 2 / 3 && flatRow(bottom - 1, px(0, h - 1))) bottom--;
+
+  // 余白がほぼない画像はそのまま
+  if ((left + (w - right)) < w * 0.01 && (top + (h - bottom)) < h * 0.01) return;
+
+  // 写真と余白の境目には中間色の線が残りやすいので、余白があった辺は少し内側まで切る
+  const shave = Math.ceil(Math.max(w, h) * 0.004);
+  if (left > 0) left += shave;
+  if (right < w) right -= shave;
+  if (top > 0) top += shave;
+  if (bottom < h) bottom -= shave;
+
+  // 写真の内側の端から背景色を拾う (左右で色が違うことがあるので別々に)
+  const inset = 2;
+  const median = (samples) => {
+    const ch = (i) => samples.map((p) => p[i]).sort((a, b) => a - b)[samples.length >> 1];
+    return `rgb(${ch(0)}, ${ch(1)}, ${ch(2)})`;
+  };
+  const edgeColor = (x) => {
+    const samples = [];
+    for (let y = top + inset; y < bottom - inset; y += 2) samples.push(px(x, y));
+    return median(samples);
+  };
+  const leftColor = edgeColor(left + inset);
+  const rightColor = edgeColor(right - 1 - inset);
+
+  const out = document.createElement("canvas");
+  out.width = right - left;
+  out.height = bottom - top;
+  out.getContext("2d").drawImage(img, left, top, out.width, out.height, 0, 0, out.width, out.height);
+  img.style.background = `linear-gradient(to right, ${leftColor} 50%, ${rightColor} 50%)`;
+  img.src = out.toDataURL("image/webp", 0.92);
+}
+
 // ---------- ホーム画面 ----------
 function renderHomeGrid() {
   el.groupGrid.innerHTML = "";
@@ -130,8 +200,10 @@ function renderHomeGrid() {
     card.className = "group-card";
 
     const img = document.createElement("img");
-    img.src = group.image;
     img.className = "thumb";
+    img.alt = group.name;
+    img.addEventListener("load", () => trimImagePadding(img));
+    img.src = group.image;
     card.appendChild(img);
     const label = document.createElement("div");
     label.className = "label";

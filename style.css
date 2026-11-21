@@ -140,8 +140,9 @@ html, body {
 .group-card .thumb {
   display: block;
   width: 100%;
-  height: 155px;
-  object-fit: cover;
+  aspect-ratio: 3 / 2;
+  object-fit: contain; /* 写真全体を表示。余白は script.js の trimImagePadding が背景色で埋める */
+  background: #eee;
 }
 .group-card .label {
   padding: 8px 10px;
@@ -374,4 +375,126 @@ html, body {
 .result-actions {
   display: flex;
   gap: 18px;
+}
+
+/* ===== PC (幅1024px以上): 画面サイズに合わせて大きく表示 ===== */
+@media (min-width: 1024px) {
+  .btn-start,
+  .btn-secondary {
+    font-size: clamp(1.2rem, 2.2vh, 1.8rem);
+    padding: clamp(16px, 1.8vh, 24px) clamp(42px, 4vh, 64px);
+  }
+  .btn-small {
+    font-size: clamp(0.85rem, 1.5vh, 1.15rem);
+    padding: clamp(6px, 0.8vh, 10px) clamp(18px, 2vh, 28px);
+  }
+
+  /* ホーム */
+  .home-header {
+    margin: clamp(16px, 3vh, 40px) 0 clamp(18px, 3vh, 40px);
+  }
+  .logo {
+    font-size: clamp(2.4rem, 3vw, 3.6rem);
+  }
+  .subtitle {
+    font-size: clamp(1rem, 1.6vh, 1.3rem);
+  }
+  .group-grid {
+    max-width: 1800px;
+    gap: clamp(18px, 1.6vw, 32px);
+  }
+  .group-card {
+    flex: 0 1 clamp(220px, 21vw, 420px);
+    border-radius: 20px;
+  }
+  .group-card .label {
+    font-size: clamp(0.95rem, 1.3vw, 1.6rem);
+    padding: clamp(8px, 1vh, 14px) 10px;
+  }
+
+  /* ゲーム開始画面 */
+  .ready-banner h2 {
+    font-size: clamp(1.8rem, 3.6vh, 3rem);
+    margin: clamp(8px, 2vh, 32px) 0 clamp(18px, 3vh, 40px);
+    padding: clamp(8px, 1vh, 14px) clamp(28px, 3vw, 56px);
+  }
+  .conveyor-track img {
+    width: clamp(190px, 30vh, 380px);
+    height: clamp(190px, 30vh, 380px);
+  }
+  .conveyor {
+    margin-bottom: clamp(24px, 4vh, 56px);
+  }
+  .ready-actions {
+    gap: clamp(16px, 2vh, 28px);
+  }
+  .countdown-number {
+    font-size: clamp(8.5rem, 22vh, 16rem);
+  }
+
+  /* ゲーム画面 */
+  .game-exit-actions {
+    top: clamp(18px, 2.4vh, 32px);
+    left: clamp(20px, 2vw, 40px);
+  }
+  .game-hud {
+    gap: clamp(28px, 3vw, 56px);
+    padding: clamp(10px, 1.4vh, 18px) clamp(28px, 3vw, 56px);
+    margin-bottom: clamp(18px, 2.4vh, 32px);
+    border-radius: 18px;
+  }
+  .hud-item {
+    min-width: clamp(64px, 6vw, 110px);
+  }
+  .hud-label {
+    font-size: clamp(0.75rem, 1.4vh, 1.1rem);
+  }
+  .hud-value {
+    font-size: clamp(1.4rem, 3vh, 2.4rem);
+  }
+  .photo-frame {
+    width: clamp(240px, 42vh, 520px);
+    height: clamp(240px, 42vh, 520px);
+    border-radius: 24px;
+  }
+  .time-bar-track {
+    width: clamp(280px, 46vh, 580px);
+    height: clamp(10px, 1.2vh, 16px);
+    margin-top: clamp(14px, 2vh, 28px);
+  }
+  .type-target {
+    margin-top: clamp(14px, 2vh, 28px);
+    padding: clamp(14px, 2vh, 28px) clamp(40px, 4vw, 80px);
+    border-radius: 24px;
+  }
+  .member-kanji {
+    font-size: clamp(1.8rem, 4vh, 3.4rem);
+    margin-bottom: clamp(6px, 1vh, 14px);
+  }
+  .member-romaji {
+    font-size: clamp(1.5rem, 3.4vh, 2.8rem);
+  }
+  .member-romaji .tokch.current {
+    border-bottom-width: clamp(3px, 0.5vh, 5px);
+  }
+
+  /* 結果画面 */
+  .result-title {
+    font-size: clamp(1.6rem, 3.2vh, 2.6rem);
+    margin: clamp(16px, 4vh, 56px) 0 clamp(12px, 1.6vh, 20px);
+  }
+  .result-rank {
+    font-size: clamp(2.2rem, 6vh, 4.5rem);
+    margin-bottom: clamp(16px, 2.4vh, 32px);
+  }
+  .result-stats {
+    font-size: clamp(1.05rem, 2.2vh, 1.7rem);
+    margin-bottom: clamp(18px, 3vh, 40px);
+  }
+  .result-stats td {
+    padding: clamp(7px, 1vh, 14px) clamp(24px, 2.4vw, 48px);
+  }
+  .result-actions {
+    gap: clamp(18px, 2vw, 32px);
+  }
 }
